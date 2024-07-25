@@ -210,6 +210,35 @@ class PcbDrawSvg:
             del group.attrib[attr]
         return elem
 
+    def rm_attr_value(
+        self, elem: etree.Element, attr: str, value: str
+    ) -> etree.Element:
+        """
+        Removes attributes from elements.
+
+        Args:
+            elem (etree.Element): The element to search within.
+            attr (str): The attribute name to remove.
+            value (str): The attribute value to remove.
+
+        Returns:
+            etree.Element: The modified element.
+        """
+        xpath_attr = f".//*[@{attr}='{value}']"
+        groups = elem.xpath(xpath_attr)
+        for group in groups:
+            group.attrib["id"] = group.attrib["id"] + "_" + group.attrib[attr]
+            del group.attrib[attr]
+        return elem
+
+    def rm_elem_empty(self, elem: etree.Element):
+        for x in elem:
+            if len(x) > 0:
+                self.rm_elem_empty(x)
+            else:
+                if x.text is None and len(x.attrib) == 1:
+                    x.getparent().remove(x)
+
     def get_masks(self) -> None:
         """
         Retrieves and stores mask elements.
@@ -305,11 +334,12 @@ def main_extract_mask():
     FILENAME = "test/ArduinoLearningKitStarter.svg"
     OUTPUT = "tmp/"
     svg = PcbDrawSvg()
+    os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
     svg.load(FILENAME)
     svg.get_masks()
-    svg.isolate_board()
     svg.rm_masks()
-    os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
+    svg.save(os.path.join(OUTPUT, f"{svg.filename}_no_masked.svg"))
+    svg.isolate_board()
     svg.save_mask_files(OUTPUT)
 
 

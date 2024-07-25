@@ -21,16 +21,17 @@ def convert_masks(input: str, output: str) -> None:
 @click.argument("output", type=click.Path(file_okay=False, dir_okay=True))
 def extract_masks(input: str, output: str) -> None:
     svg = PcbDrawSvg()
+    os.makedirs(os.path.dirname(output), exist_ok=True)
     svg.load(input)
     svg.get_masks()
-    svg.isolate_board()
     svg.rm_masks()
-    os.makedirs(os.path.dirname(output), exist_ok=True)
+    svg.save(os.path.join(output, f"{svg.filename}_no_masked.svg"))
+    svg.isolate_board()
     svg.save_mask_files(output)
 
 
 @click.group()
-@click.version_option("v0.0.1")
+@click.version_option("v0.0.4")
 def run() -> None:
     """
     PcbDrawToPDF exports the masks employed by PcbDraw in order to apply masking on Adobe
