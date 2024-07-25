@@ -92,6 +92,7 @@ class PcbDrawSvg:
             self.to_inkscape_svg(filepath)
             self.root_orig = etree.parse(self.filepath).getroot()
         self.root = deepcopy(self.root_orig)
+        self.clean()
         self.get_board()
 
     def save_elem(self, element: etree.Element, outfile: str) -> None:
@@ -210,7 +211,7 @@ class PcbDrawSvg:
             del group.attrib[attr]
         return elem
 
-    def rm_attr_value(
+    def rm_elem_by_attr_value(
         self, elem: etree.Element, attr: str, value: str
     ) -> etree.Element:
         """
@@ -227,17 +228,45 @@ class PcbDrawSvg:
         xpath_attr = f".//*[@{attr}='{value}']"
         groups = elem.xpath(xpath_attr)
         for group in groups:
-            group.attrib["id"] = group.attrib["id"] + "_" + group.attrib[attr]
-            del group.attrib[attr]
+            group.getparent().remove(group)
         return elem
 
     def rm_elem_empty(self, elem: etree.Element):
+        """
+        Recursively remove empty elements from the specified XML element.
+
+        This method traverses through the given XML element and its children.
+        It removes any element that has no text content and only one attribute.
+
+        Parameters:
+        elem (etree.Element): The XML element to process.
+        """
         for x in elem:
             if len(x) > 0:
                 self.rm_elem_empty(x)
             else:
                 if x.text is None and len(x.attrib) == 1:
                     x.getparent().remove(x)
+
+    def rm_empty_groups(self, elem: etree.Element):
+        """
+        Remove empty group elements from the specified XML element.
+
+        This method finds and removes all group elements ('g' tags) in the given
+        XML element that have no children and only one attribute (which is 'id').
+
+        Parameters:
+        elem (etree.Element): The XML element to process.
+        """
+        tag = self.get_tag("g")
+        groups = elem.findall(f".//{tag}")
+        for group in groups:
+            if (
+                len(group) == 0
+                and len(group.attrib) == 1
+                and list(group.attrib.keys())[0] == "id"
+            ):
+                group.getparent().remove(group)
 
     def get_masks(self) -> None:
         """
@@ -259,6 +288,13 @@ class PcbDrawSvg:
         self.masks[mask_name].tag = gtag
         self.masks[mask_name].text = ""
         self.masks[mask_name].tail = ""
+
+    def indent_mask(self, group, indent):
+        for elem in group:
+            elem.tail = "\n" + indent * " "
+            if len(elem):
+                self.indent_mask(elem, indent + 2)
+        group[-1].tail = "\n" + (indent - 2) * " "
 
     def rm_ink_elem(self) -> None:
         """
@@ -290,12 +326,19 @@ class PcbDrawSvg:
         """
         Adds stored mask patterns back to the board element.
         """
-        self.rm_ink_elem()
         board = self.get_board()
+        board[-1].tail = board[-1].tail + "  "
+        indent = len(board.tail.replace("\n", "")) + 2
+        for mask in self.masks.values():
+            mask.text = "\n" + (indent + 2) * " "
+            mask.tail = "\n" + indent * " "
+            self.indent_mask(mask, indent + 2)
+        # Last element must have less indentation
+        self.masks[list(self.masks.keys())[-1]].tail = "\n" + (indent - 2) * " "
         if len(board) == 0:
             raise Exception("The board hasn not elements.")
-        for name, mask in self.masks.items():
-            board.insert(-1, mask)
+        for mask in self.masks.values():
+            board.append(mask)
 
     def save_mask_files(self, outpath: str) -> None:
         """
@@ -310,6 +353,23 @@ class PcbDrawSvg:
             filepath = os.path.join(outpath, self.filename + "_" + name + self.ext)
             self.save(filepath)
             board.remove(mask)
+
+    def clean(self):
+        """
+        Clean the root XML element by removing unnecessary elements and attributes.
+
+        This method performs several cleaning operations on the root XML element:
+        1. Removes empty group elements.
+        2. Removes elements with a specific attribute value.
+        3. Removes elements with specific tags (metadata and namedview).
+
+        The cleaning process helps to simplify the XML structure and remove
+        unnecessary data that might interfere with further processing.
+        """
+        self.rm_empty_groups(self.root)
+        self.rm_elem_by_attr_value(self.root, "id", "highlightContainer")
+        self.rm_tag(self.root, "metadata", recursive=True)
+        self.rm_tag(self.root, "namedview", recursive=True)
 
 
 def main_convert():

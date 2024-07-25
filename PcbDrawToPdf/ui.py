@@ -31,7 +31,7 @@ def extract_masks(input: str, output: str) -> None:
 
 
 @click.group()
-@click.version_option("v0.0.4")
+@click.version_option("v0.0.5")
 def run() -> None:
     """
     PcbDrawToPDF exports the masks employed by PcbDraw in order to apply masking on Adobe

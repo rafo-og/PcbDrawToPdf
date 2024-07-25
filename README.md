@@ -56,3 +56,14 @@ pcbdrawtopdf convert-masks ArduinoLearningKitStarter.svg ArduinoLearningKitStart
 ```
 pcbdrawtopdf extract-masks ArduinoLearningKitStarter.svg export_folder
 ```
+
+## Important notes
+
+I have experienced some problems when PcbDraw exports the back side of the PCB. One of the solutions I found is to load the SVG from PcbDraw in Inkspace, select all the text objects and convert them to glyphs. To do so, follow these steps in Inkscape:
+
+1. Select any text object in your drawing.
+2. Then `Edit > Select Same > Object Type`.
+3. Afterwards `Text > Text to Glyphs`.
+4. Finally save the file `File > Save`.
+
+Use this new SVG file with PcbDrawToPdf.

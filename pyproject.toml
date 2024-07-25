@@ -1,6 +1,6 @@
 [project]
 name = "PcbDrawToPdf"
-version = "0.0.4"
+version = "0.0.5"
 description = "PcbDrawToPDF exports the masks employed by PcbDraw in order to apply masking on Adobe software and be able to save on PDF correctly."
 authors = [
     {name = "Rafael de la Rosa", email = "rafodelarosa.og@gmail.com"}
@@ -11,7 +11,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 readme = "README.md"
-requires-python = ">=3.10.5"
+requires-python = ">=3.x"
 dependencies = [
     "click",
     "lxml"
