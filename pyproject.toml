@@ -1,6 +1,6 @@
 [project]
 name = "PcbDrawToPdf"
-version = "0.0.1"
+version = "0.0.2"
 description = "PcbDrawToPDF exports the masks employed by PcbDraw in order to apply masking on Adobe software and be able to save on PDF correctly."
 authors = [
     {name = "Rafael de la Rosa", email = "rafodelarosa.og@gmail.com"}
