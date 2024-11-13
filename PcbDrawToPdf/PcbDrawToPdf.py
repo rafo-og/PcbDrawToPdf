@@ -44,8 +44,6 @@ class PcbDrawSvg:
         Initializes the PcbDrawSvg object.
         """
         self.masks = {}
-        self.xml
-        self.root
 
     def __store_metadata(self, filepath: str) -> None:
         """
@@ -96,6 +94,7 @@ class PcbDrawSvg:
             filepath = self.filepath_saved
         else:
             filepath = outfile
+            os.remove(self.filepath_saved)
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         self.xml.write(filepath, xml_declaration=True, encoding="utf-8", method="xml")
 
