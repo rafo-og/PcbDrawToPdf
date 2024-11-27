@@ -63,15 +63,19 @@ class PcbDrawSvg:
             self.folder, self.filename + "_saved" + self.ext
         )
 
-    def __inkscape_clean(self):
+    def __inkscape_clean(self, infile=None, outfile=None):
+        if infile is None:
+            infile = self.filepath
+        if outfile is None:
+            outfile = self.filepath_saved
         cmd = [
             "C:/Program Files/Inkscape/bin/inkscape.exe",
             "--export-plain-svg",
             "--export-text-to-path",
             "--vacuum-defs",
             "-o",
-            self.filepath_saved,
-            self.filepath,
+            outfile,
+            infile,
         ]
         subprocess.run(cmd, stdout=subprocess.PIPE)
 
@@ -83,11 +87,14 @@ class PcbDrawSvg:
             filepath (str): The path to the SVG file.
         """
         self.__store_metadata(filepath)
+        print("Cleaning file...")
         self.__inkscape_clean()
+        print("Loading file...")
         self.xml = etree.parse(self.filepath_saved)
         self.root = self.xml.getroot()
 
     def save(self, outfile: str = None):
+        print("Saving file...")
         self.clean()
         etree.indent(self.xml, space="\t", level=0)
         if outfile is None:
@@ -97,8 +104,13 @@ class PcbDrawSvg:
             os.remove(self.filepath_saved)
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         self.xml.write(filepath, xml_declaration=True, encoding="utf-8", method="xml")
+        self.__inkscape_clean(filepath, filepath)
+        self.xml = etree.parse(filepath)
+        etree.indent(self.xml, space="\t", level=0)
+        self.xml.write(filepath, xml_declaration=True, encoding="utf-8", method="xml")
 
     def convert(self):
+        print("Extracting masks...")
         mask_group = etree.Element("g", attrib={"id": "masks"})
         self.root.insert(0, mask_group)
         # Move masks to a new group
@@ -115,6 +127,7 @@ class PcbDrawSvg:
         elem = self.root.find("./defs", self.ns)
         self.root.remove(elem)
         # Clean board container
+        print("Cleaning file...")
         board = self.root.find("./g[@id='boardContainer']", self.ns)
         substrate = board.find("./g[@id='substrate_url(#hole-mask)']", self.ns)
         for child in substrate:
